@@ -109,13 +109,13 @@ function renderIcon(size, { padding = 0.14, maskableBg = false } = {}) {
         g = mix(g, 255, fgAlpha);
         b = mix(b, 255, fgAlpha);
       } else {
-        r = mix(0, bgR, bgAlpha);
-        g = mix(0, bgG, bgAlpha);
-        b = mix(0, bgB, bgAlpha);
-        a = 255 * bgAlpha;
-        r = mix(r, 255, fgAlpha * bgAlpha);
-        g = mix(g, 255, fgAlpha * bgAlpha);
-        b = mix(b, 255, fgAlpha * bgAlpha);
+        // Non-premultiplied alpha: keep the true shape color in RGB and let
+        // the alpha channel alone carry edge coverage, otherwise blending
+        // both darkens semi-transparent edge pixels into a dark halo.
+        r = bgR; g = bgG; b = bgB; a = 255 * bgAlpha;
+        r = mix(r, 255, fgAlpha);
+        g = mix(g, 255, fgAlpha);
+        b = mix(b, 255, fgAlpha);
       }
 
       const i = (y * s + x) * 4;
