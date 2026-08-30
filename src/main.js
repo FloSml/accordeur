@@ -18,6 +18,11 @@ const els = {
 const NOISE_FLOOR = 0.001;
 const LISTENING_STATUS = 'Écoute en cours… jouez une corde.';
 const FREQUENCY_HISTORY_SIZE = 5;
+// A plucked string holds one frequency steadily as it decays; ambient sound
+// (TV, voices) tends to wander from moment to moment. Require several
+// consecutive readings to agree before committing to a note, so a brief
+// stray match doesn't flash on screen.
+const MAX_STABLE_SPREAD_CENTS = 20;
 
 const detector = new PitchDetector();
 let currentInstrument = 'guitar';
@@ -28,6 +33,13 @@ function medianFrequency() {
   const sorted = [...frequencyHistory].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+function isFrequencyStable() {
+  if (frequencyHistory.length < FREQUENCY_HISTORY_SIZE) return false;
+  const logs = frequencyHistory.map((f) => Math.log2(f));
+  const spreadCents = (Math.max(...logs) - Math.min(...logs)) * 1200;
+  return spreadCents <= MAX_STABLE_SPREAD_CENTS;
 }
 
 function renderStrings() {
@@ -97,6 +109,7 @@ function handlePitch(result) {
 
   frequencyHistory.push(result.frequency);
   if (frequencyHistory.length > FREQUENCY_HISTORY_SIZE) frequencyHistory.shift();
+  if (!isFrequencyStable()) return;
   const frequency = medianFrequency();
 
   const note = frequencyToNote(frequency);

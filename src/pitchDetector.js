@@ -3,11 +3,11 @@
 // less prone to octave errors on harmonically rich sounds like a plucked
 // string. Tuned for the guitar/ukulele fundamental range (~60-1000 Hz).
 
-const RMS_THRESHOLD = 0.0025;
+const RMS_THRESHOLD = 0.005;
 const MIN_FREQUENCY = 60;
 const MAX_FREQUENCY = 1000;
 const PEAK_THRESHOLD_RATIO = 0.8; // MPM's "k": accept the first peak within 80% of the best one
-const MIN_CLARITY = 0.65; // reject non-periodic/noisy signals outright
+const MIN_CLARITY = 0.75; // reject non-periodic/noisy signals outright
 
 export function detectPitch(buffer, sampleRate) {
   const size = buffer.length;
