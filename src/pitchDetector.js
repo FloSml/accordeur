@@ -1,7 +1,7 @@
 // Autocorrelation-based pitch detector (time-domain ACF with parabolic
 // interpolation), tuned for the guitar/ukulele fundamental range (~70-500 Hz).
 
-const RMS_THRESHOLD = 0.01;
+const RMS_THRESHOLD = 0.003;
 const MIN_FREQUENCY = 60;
 const MAX_FREQUENCY = 1000;
 
@@ -11,7 +11,7 @@ export function autocorrelate(buffer, sampleRate) {
   let rms = 0;
   for (let i = 0; i < size; i++) rms += buffer[i] * buffer[i];
   rms = Math.sqrt(rms / size);
-  if (rms < RMS_THRESHOLD) return null;
+  if (rms < RMS_THRESHOLD) return { rms, frequency: null, clarity: 0 };
 
   // Trim to the region with signal to keep autocorrelation stable.
   let start = 0;
@@ -21,7 +21,7 @@ export function autocorrelate(buffer, sampleRate) {
   while (end > start && Math.abs(buffer[end]) < trimThreshold) end--;
   const trimmed = buffer.subarray(start, end + 1);
   const n = trimmed.length;
-  if (n < 2) return null;
+  if (n < 2) return { rms, frequency: null, clarity: 0 };
 
   const maxLag = Math.min(n - 1, Math.floor(sampleRate / MIN_FREQUENCY));
   const minLag = Math.max(1, Math.floor(sampleRate / MAX_FREQUENCY));
@@ -46,7 +46,7 @@ export function autocorrelate(buffer, sampleRate) {
       bestLag = i;
     }
   }
-  if (bestLag <= 0 || bestValue <= 0) return null;
+  if (bestLag <= 0 || bestValue <= 0) return { rms, frequency: null, clarity: 0 };
 
   // Parabolic interpolation around the peak for sub-sample precision.
   const y0 = correlations[Math.max(bestLag - 1, minLag)];
@@ -57,7 +57,7 @@ export function autocorrelate(buffer, sampleRate) {
   const refinedLag = bestLag + Math.max(-1, Math.min(1, shift));
 
   const frequency = sampleRate / refinedLag;
-  if (frequency < MIN_FREQUENCY || frequency > MAX_FREQUENCY) return null;
+  if (frequency < MIN_FREQUENCY || frequency > MAX_FREQUENCY) return { rms, frequency: null, clarity: 0 };
 
   // Normalized clarity of the peak, used to reject noisy/ambiguous reads.
   const zeroLagEnergy = correlations[minLag] || 1e-9;
@@ -83,7 +83,7 @@ export class PitchDetector {
       audio: {
         echoCancellation: false,
         noiseSuppression: false,
-        autoGainControl: false,
+        autoGainControl: true,
       },
     });
 

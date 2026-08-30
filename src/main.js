@@ -15,6 +15,9 @@ const els = {
   status: document.getElementById('status'),
 };
 
+const NOISE_FLOOR = 0.0008;
+const LISTENING_STATUS = 'Écoute en cours… jouez une corde.';
+
 const detector = new PitchDetector();
 let currentInstrument = 'guitar';
 let smoothedFrequency = null;
@@ -69,8 +72,13 @@ function clearReading() {
 }
 
 function handlePitch(result) {
-  if (!result) {
+  if (!result || result.frequency === null) {
     silenceFrames++;
+    if (result && result.rms > NOISE_FLOOR) {
+      els.status.textContent = 'Son trop faible — rapproche le micro ou joue plus fort.';
+    } else if (silenceFrames > 20) {
+      els.status.textContent = LISTENING_STATUS;
+    }
     if (silenceFrames > 20) {
       smoothedFrequency = null;
       clearReading();
@@ -78,6 +86,7 @@ function handlePitch(result) {
     return;
   }
   silenceFrames = 0;
+  els.status.textContent = LISTENING_STATUS;
 
   smoothedFrequency = smoothedFrequency === null
     ? result.frequency
