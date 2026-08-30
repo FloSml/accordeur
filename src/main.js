@@ -15,7 +15,7 @@ const els = {
   status: document.getElementById('status'),
 };
 
-const NOISE_FLOOR = 0.0008;
+const NOISE_FLOOR = 0.0002;
 const LISTENING_STATUS = 'Écoute en cours… jouez une corde.';
 const FREQUENCY_HISTORY_SIZE = 5;
 

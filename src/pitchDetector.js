@@ -3,7 +3,7 @@
 // less prone to octave errors on harmonically rich sounds like a plucked
 // string. Tuned for the guitar/ukulele fundamental range (~60-1000 Hz).
 
-const RMS_THRESHOLD = 0.003;
+const RMS_THRESHOLD = 0.0006;
 const MIN_FREQUENCY = 60;
 const MAX_FREQUENCY = 1000;
 const PEAK_THRESHOLD_RATIO = 0.8; // MPM's "k": accept the first peak within 80% of the best one
@@ -86,12 +86,12 @@ export class PitchDetector {
 
   async start(onPitch) {
     if (this.running) return;
+    // Only request autoGainControl explicitly — forcing echoCancellation/
+    // noiseSuppression off can make some platforms disable their whole
+    // voice-processing chain (AGC included), leaving the mic far too quiet
+    // for a string plucked at a normal distance.
     this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: true,
-      },
+      audio: { autoGainControl: true },
     });
 
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
