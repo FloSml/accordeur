@@ -2,6 +2,8 @@
 
 Accordeur chromatique pour guitare et ukulélé, en Progressive Web App (installable, fonctionne hors-ligne, aucune donnée envoyée sur un serveur).
 
+**App en ligne : https://flosml.github.io/accordeur/**
+
 ## Fonctionnalités
 
 - Détection de hauteur en temps réel via le micro (autocorrélation sur le signal audio, dans le navigateur)
@@ -32,3 +34,11 @@ Les icônes de l'app (`public/icons/`) sont générées par `scripts/generate-ic
 ```bash
 node scripts/generate-icons.mjs
 ```
+
+## Auteur
+
+Florian Soumaille
+
+## Licence
+
+[MIT](LICENSE)
