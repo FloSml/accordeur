@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - claude/pwa-instrument-tuner-i4ejgf
   workflow_dispatch:
 
 permissions:
