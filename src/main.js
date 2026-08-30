@@ -17,11 +17,18 @@ const els = {
 
 const NOISE_FLOOR = 0.0008;
 const LISTENING_STATUS = 'Écoute en cours… jouez une corde.';
+const FREQUENCY_HISTORY_SIZE = 5;
 
 const detector = new PitchDetector();
 let currentInstrument = 'guitar';
-let smoothedFrequency = null;
+let frequencyHistory = [];
 let silenceFrames = 0;
+
+function medianFrequency() {
+  const sorted = [...frequencyHistory].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
 
 function renderStrings() {
   const instrument = INSTRUMENTS[currentInstrument];
@@ -80,7 +87,7 @@ function handlePitch(result) {
       els.status.textContent = LISTENING_STATUS;
     }
     if (silenceFrames > 20) {
-      smoothedFrequency = null;
+      frequencyHistory = [];
       clearReading();
     }
     return;
@@ -88,14 +95,14 @@ function handlePitch(result) {
   silenceFrames = 0;
   els.status.textContent = LISTENING_STATUS;
 
-  smoothedFrequency = smoothedFrequency === null
-    ? result.frequency
-    : smoothedFrequency * 0.75 + result.frequency * 0.25;
+  frequencyHistory.push(result.frequency);
+  if (frequencyHistory.length > FREQUENCY_HISTORY_SIZE) frequencyHistory.shift();
+  const frequency = medianFrequency();
 
-  const note = frequencyToNote(smoothedFrequency);
+  const note = frequencyToNote(frequency);
   els.noteName.textContent = note.name;
   els.cents.textContent = `${note.cents > 0 ? '+' : ''}${note.cents} cents`;
-  els.frequency.textContent = `${smoothedFrequency.toFixed(1)} Hz`;
+  els.frequency.textContent = `${frequency.toFixed(1)} Hz`;
   updateNeedle(note.cents);
 
   const inTune = Math.abs(note.cents) <= 5;

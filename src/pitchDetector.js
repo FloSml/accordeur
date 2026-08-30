@@ -1,11 +1,15 @@
-// Autocorrelation-based pitch detector (time-domain ACF with parabolic
-// interpolation), tuned for the guitar/ukulele fundamental range (~70-500 Hz).
+// Pitch detector using the McLeod Pitch Method (MPM): a normalized square
+// difference function (NSDF) instead of raw autocorrelation, which is much
+// less prone to octave errors on harmonically rich sounds like a plucked
+// string. Tuned for the guitar/ukulele fundamental range (~60-1000 Hz).
 
 const RMS_THRESHOLD = 0.003;
 const MIN_FREQUENCY = 60;
 const MAX_FREQUENCY = 1000;
+const PEAK_THRESHOLD_RATIO = 0.8; // MPM's "k": accept the first peak within 80% of the best one
+const MIN_CLARITY = 0.5; // reject non-periodic/noisy signals outright
 
-export function autocorrelate(buffer, sampleRate) {
+export function detectPitch(buffer, sampleRate) {
   const size = buffer.length;
 
   let rms = 0;
@@ -13,55 +17,58 @@ export function autocorrelate(buffer, sampleRate) {
   rms = Math.sqrt(rms / size);
   if (rms < RMS_THRESHOLD) return { rms, frequency: null, clarity: 0 };
 
-  // Trim to the region with signal to keep autocorrelation stable.
-  let start = 0;
-  let end = size - 1;
-  const trimThreshold = rms * 0.25;
-  while (start < size && Math.abs(buffer[start]) < trimThreshold) start++;
-  while (end > start && Math.abs(buffer[end]) < trimThreshold) end--;
-  const trimmed = buffer.subarray(start, end + 1);
-  const n = trimmed.length;
-  if (n < 2) return { rms, frequency: null, clarity: 0 };
+  const maxLag = Math.min(size - 1, Math.floor(sampleRate / MIN_FREQUENCY));
 
-  const maxLag = Math.min(n - 1, Math.floor(sampleRate / MIN_FREQUENCY));
-  const minLag = Math.max(1, Math.floor(sampleRate / MAX_FREQUENCY));
-
-  const correlations = new Float32Array(maxLag + 1);
-  for (let lag = minLag; lag <= maxLag; lag++) {
-    let sum = 0;
-    const limit = n - lag;
-    for (let i = 0; i < limit; i++) sum += trimmed[i] * trimmed[i + lag];
-    correlations[lag] = sum / limit;
+  const nsdf = new Float32Array(maxLag + 1);
+  for (let tau = 0; tau <= maxLag; tau++) {
+    let acf = 0;
+    let energy = 0;
+    const limit = size - tau;
+    for (let i = 0; i < limit; i++) {
+      acf += buffer[i] * buffer[i + tau];
+      energy += buffer[i] * buffer[i] + buffer[i + tau] * buffer[i + tau];
+    }
+    nsdf[tau] = energy > 0 ? (2 * acf) / energy : 0;
   }
 
-  // Walk past the initial downward slope from lag 0, then find the first
-  // (and usually strongest) peak — this is the fundamental period.
-  let lag = minLag;
-  while (lag < maxLag - 1 && correlations[lag + 1] > correlations[lag]) lag++;
-  let bestLag = -1;
-  let bestValue = -Infinity;
-  for (let i = lag; i <= maxLag; i++) {
-    if (correlations[i] > bestValue) {
-      bestValue = correlations[i];
-      bestLag = i;
+  // Key maxima: the highest NSDF value within each lobe between successive
+  // positive-going zero crossings. Picking the first lobe that's close enough
+  // to the global best (rather than always the global best) is what makes
+  // MPM robust against locking onto a harmonic instead of the fundamental.
+  const maxima = [];
+  for (let tau = 1; tau < maxLag; tau++) {
+    if (nsdf[tau - 1] <= 0 && nsdf[tau] > 0) {
+      let peakTau = tau;
+      let peakValue = nsdf[tau];
+      while (tau + 1 <= maxLag && nsdf[tau + 1] > 0) {
+        tau++;
+        if (nsdf[tau] > peakValue) {
+          peakValue = nsdf[tau];
+          peakTau = tau;
+        }
+      }
+      maxima.push({ tau: peakTau, value: peakValue });
     }
   }
-  if (bestLag <= 0 || bestValue <= 0) return { rms, frequency: null, clarity: 0 };
+  if (maxima.length === 0) return { rms, frequency: null, clarity: 0 };
 
-  // Parabolic interpolation around the peak for sub-sample precision.
-  const y0 = correlations[Math.max(bestLag - 1, minLag)];
-  const y1 = correlations[bestLag];
-  const y2 = correlations[Math.min(bestLag + 1, maxLag)];
+  const globalBest = Math.max(...maxima.map((m) => m.value));
+  const threshold = PEAK_THRESHOLD_RATIO * globalBest;
+  const chosen = maxima.find((m) => m.value >= threshold) ?? maxima[0];
+
+  // Parabolic interpolation around the chosen peak for sub-sample precision.
+  const y0 = nsdf[Math.max(chosen.tau - 1, 0)];
+  const y1 = nsdf[chosen.tau];
+  const y2 = nsdf[Math.min(chosen.tau + 1, maxLag)];
   const denom = y0 - 2 * y1 + y2;
   const shift = denom !== 0 ? (0.5 * (y0 - y2)) / denom : 0;
-  const refinedLag = bestLag + Math.max(-1, Math.min(1, shift));
+  const refinedTau = chosen.tau + Math.max(-1, Math.min(1, shift));
 
-  const frequency = sampleRate / refinedLag;
-  if (frequency < MIN_FREQUENCY || frequency > MAX_FREQUENCY) return { rms, frequency: null, clarity: 0 };
-
-  // Normalized clarity of the peak, used to reject noisy/ambiguous reads.
-  const zeroLagEnergy = correlations[minLag] || 1e-9;
-  const clarity = Math.max(0, Math.min(1, bestValue / zeroLagEnergy));
+  const frequency = sampleRate / refinedTau;
+  const clarity = chosen.value;
+  if (frequency < MIN_FREQUENCY || frequency > MAX_FREQUENCY || clarity < MIN_CLARITY) {
+    return { rms, frequency: null, clarity };
+  }
 
   return { frequency, rms, clarity };
 }
@@ -92,7 +99,9 @@ export class PitchDetector {
 
     this.source = this.audioContext.createMediaStreamSource(this.stream);
     this.analyser = this.audioContext.createAnalyser();
-    this.analyser.fftSize = 2048;
+    // Large enough window to cover several periods of the lowest guitar
+    // string (~82 Hz) for a stable NSDF estimate.
+    this.analyser.fftSize = 4096;
     this.buffer = new Float32Array(this.analyser.fftSize);
     this.source.connect(this.analyser);
 
@@ -100,7 +109,7 @@ export class PitchDetector {
     const loop = () => {
       if (!this.running) return;
       this.analyser.getFloatTimeDomainData(this.buffer);
-      const result = autocorrelate(this.buffer, this.audioContext.sampleRate);
+      const result = detectPitch(this.buffer, this.audioContext.sampleRate);
       onPitch(result);
       this.rafId = requestAnimationFrame(loop);
     };
