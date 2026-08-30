@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a66d9" />
+    <meta name="description" content="Accordeur de guitare et ukulélé, fonctionne hors-ligne." />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Accordeur</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <h1>Accordeur</h1>
+        <div class="instrument-switch" role="tablist" aria-label="Choix de l'instrument">
+          <button type="button" class="instrument-btn is-active" data-instrument="guitar" role="tab" aria-selected="true">Guitare</button>
+          <button type="button" class="instrument-btn" data-instrument="ukulele" role="tab" aria-selected="false">Ukulélé</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="gauge-section" aria-live="polite">
+          <div class="gauge">
+            <svg viewBox="0 0 220 130" class="gauge-svg" aria-hidden="true">
+              <path d="M 15 115 A 95 95 0 0 1 205 115" class="gauge-track gauge-zone-out" />
+              <path d="M 41 115 A 95 95 0 0 1 179 115" class="gauge-track gauge-zone-mid" />
+              <path d="M 58 115 A 95 95 0 0 1 162 115" class="gauge-track gauge-zone-in" />
+              <line id="needle" x1="110" y1="115" x2="110" y2="30" class="gauge-needle" />
+              <circle cx="110" cy="115" r="6" class="gauge-pivot" />
+            </svg>
+            <div class="gauge-labels">
+              <span>♭</span>
+              <span>♯</span>
+            </div>
+          </div>
+
+          <div class="reading">
+            <div id="note-name" class="note-name">–</div>
+            <div id="cents" class="cents">0 cents</div>
+            <div id="frequency" class="frequency">0.0 Hz</div>
+          </div>
+        </section>
+
+        <section class="strings-section">
+          <div id="strings" class="strings" role="group" aria-label="Cordes"></div>
+        </section>
+
+        <section class="controls">
+          <button id="mic-toggle" type="button" class="mic-btn">
+            <span id="mic-icon" class="mic-icon" aria-hidden="true"></span>
+            <span id="mic-label">Activer le micro</span>
+          </button>
+          <p id="status" class="status"></p>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>Fonctionne hors-ligne · Aucune donnée audio n'est enregistrée ni envoyée</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
