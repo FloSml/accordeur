@@ -1,7 +1,7 @@
-import { midiToFrequency, noteLabel } from './notes.js';
+import { midiToFrequency } from './notes.js';
 
 function makeString(name, midi) {
-  return { label: noteLabel(name, Math.floor(midi / 12) - 1), midi, frequency: midiToFrequency(midi) };
+  return { label: name, midi, frequency: midiToFrequency(midi) };
 }
 
 export const INSTRUMENTS = {

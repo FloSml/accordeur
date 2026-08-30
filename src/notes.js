@@ -20,7 +20,3 @@ export function frequencyToNote(freq) {
   const name = NOTE_NAMES[((midi % 12) + 12) % 12];
   return { midi, name, octave, cents, targetFrequency: midiToFrequency(midi) };
 }
-
-export function noteLabel(name, octave) {
-  return `${name}${octave}`;
-}

@@ -93,7 +93,7 @@ function handlePitch(result) {
     : smoothedFrequency * 0.75 + result.frequency * 0.25;
 
   const note = frequencyToNote(smoothedFrequency);
-  els.noteName.textContent = `${note.name}${note.octave}`;
+  els.noteName.textContent = note.name;
   els.cents.textContent = `${note.cents > 0 ? '+' : ''}${note.cents} cents`;
   els.frequency.textContent = `${smoothedFrequency.toFixed(1)} Hz`;
   updateNeedle(note.cents);
