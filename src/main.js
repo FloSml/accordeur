@@ -1,6 +1,5 @@
 import './style.css';
 import { PitchDetector } from './pitchDetector.js';
-import { frequencyToNote } from './notes.js';
 import { INSTRUMENTS } from './instruments.js';
 
 const els = {
@@ -23,6 +22,11 @@ const FREQUENCY_HISTORY_SIZE = 5;
 // consecutive readings to agree before committing to a note, so a brief
 // stray match doesn't flash on screen.
 const MAX_STABLE_SPREAD_CENTS = 20;
+// This is a tuner for known open strings, not a general chromatic tuner: only
+// react to pitches close to one of the current instrument's strings, so an
+// unrelated ambient tone (TV, voices) can't masquerade as a note. Adjacent
+// strings are at least 400 cents apart, so this stays unambiguous.
+const STRING_MATCH_TOLERANCE_CENTS = 180;
 
 const detector = new PitchDetector();
 let currentInstrument = 'guitar';
@@ -40,6 +44,19 @@ function isFrequencyStable() {
   const logs = frequencyHistory.map((f) => Math.log2(f));
   const spreadCents = (Math.max(...logs) - Math.min(...logs)) * 1200;
   return spreadCents <= MAX_STABLE_SPREAD_CENTS;
+}
+
+function findNearestString(frequency) {
+  let nearest = null;
+  let nearestCents = Infinity;
+  for (const string of INSTRUMENTS[currentInstrument].strings) {
+    const cents = 1200 * Math.log2(frequency / string.frequency);
+    if (Math.abs(cents) < Math.abs(nearestCents)) {
+      nearest = string;
+      nearestCents = cents;
+    }
+  }
+  return { string: nearest, cents: nearestCents };
 }
 
 function renderStrings() {
@@ -112,20 +129,23 @@ function handlePitch(result) {
   if (!isFrequencyStable()) return;
   const frequency = medianFrequency();
 
-  const note = frequencyToNote(frequency);
-  els.noteName.textContent = note.name;
-  els.cents.textContent = `${note.cents > 0 ? '+' : ''}${note.cents} cents`;
-  els.frequency.textContent = `${frequency.toFixed(1)} Hz`;
-  updateNeedle(note.cents);
+  const { string, cents: rawCents } = findNearestString(frequency);
+  if (!string || Math.abs(rawCents) > STRING_MATCH_TOLERANCE_CENTS) return;
+  const cents = Math.round(rawCents);
 
-  const inTune = Math.abs(note.cents) <= 5;
-  const close = Math.abs(note.cents) <= 15;
-  setTuningState(inTune ? 'is-in-tune' : note.cents < 0 ? 'is-flat' : 'is-sharp');
+  els.noteName.textContent = string.label;
+  els.cents.textContent = `${cents > 0 ? '+' : ''}${cents} cents`;
+  els.frequency.textContent = `${frequency.toFixed(1)} Hz`;
+  updateNeedle(cents);
+
+  const inTune = Math.abs(cents) <= 5;
+  const close = Math.abs(cents) <= 15;
+  setTuningState(inTune ? 'is-in-tune' : cents < 0 ? 'is-flat' : 'is-sharp');
   els.needle.classList.toggle('needle-in-tune', inTune);
   els.needle.classList.toggle('needle-close', !inTune && close);
 
   document.querySelectorAll('.string-chip').forEach((chip) => {
-    const isMatch = Number(chip.dataset.midi) === note.midi;
+    const isMatch = Number(chip.dataset.midi) === string.midi;
     chip.classList.toggle('is-active', isMatch);
     chip.classList.toggle('is-in-tune', isMatch && inTune);
   });
