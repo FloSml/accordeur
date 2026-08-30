@@ -11,7 +11,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['icons/favicon-16.png', 'icons/favicon-32.png', 'icons/apple-touch-icon.png'],
+      includeAssets: ['icons/favicon-16-v2.png', 'icons/favicon-32-v2.png', 'icons/apple-touch-icon-v2.png'],
       manifest: {
         name: 'Accordeur — Guitare & Ukulélé',
         short_name: 'Accordeur',
@@ -21,14 +21,20 @@ export default defineConfig({
         background_color: '#0a0a12',
         theme_color: '#0a66d9',
         icons: [
-          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-          { src: 'icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/icon-192-v2.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/icon-512-v2.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/maskable-192-v2.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/maskable-512-v2.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,webmanifest}'],
+        // Force any waiting service worker to activate and take control
+        // immediately, and drop stale precaches from previous deploys,
+        // instead of leaving an old version running until every tab closes.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
       },
     }),
   ],

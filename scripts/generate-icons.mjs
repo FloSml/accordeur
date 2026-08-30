@@ -128,14 +128,17 @@ function renderIcon(size, { padding = 0.14, maskableBg = false } = {}) {
   return buf;
 }
 
+// Filenames carry a version suffix so that fixing the artwork also changes
+// the URL — otherwise browsers/OSes that cached the old bitmap by URL (a
+// common PWA install-icon pitfall) would keep showing it indefinitely.
 const targets = [
-  { name: 'icon-192.png', size: 192, opts: { padding: 0.16 } },
-  { name: 'icon-512.png', size: 512, opts: { padding: 0.16 } },
-  { name: 'maskable-192.png', size: 192, opts: { padding: 0.24, maskableBg: true } },
-  { name: 'maskable-512.png', size: 512, opts: { padding: 0.24, maskableBg: true } },
-  { name: 'apple-touch-icon.png', size: 180, opts: { padding: 0.14 } },
-  { name: 'favicon-32.png', size: 32, opts: { padding: 0.1 } },
-  { name: 'favicon-16.png', size: 16, opts: { padding: 0.05 } },
+  { name: 'icon-192-v2.png', size: 192, opts: { padding: 0.16 } },
+  { name: 'icon-512-v2.png', size: 512, opts: { padding: 0.16 } },
+  { name: 'maskable-192-v2.png', size: 192, opts: { padding: 0.24, maskableBg: true } },
+  { name: 'maskable-512-v2.png', size: 512, opts: { padding: 0.24, maskableBg: true } },
+  { name: 'apple-touch-icon-v2.png', size: 180, opts: { padding: 0.14 } },
+  { name: 'favicon-32-v2.png', size: 32, opts: { padding: 0.1 } },
+  { name: 'favicon-16-v2.png', size: 16, opts: { padding: 0.05 } },
 ];
 
 for (const t of targets) {
