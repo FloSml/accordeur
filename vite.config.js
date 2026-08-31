@@ -11,7 +11,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['icons/favicon-16-v2.png', 'icons/favicon-32-v2.png', 'icons/apple-touch-icon-v2.png'],
+      includeAssets: ['icons/favicon-16-v2.png', 'icons/favicon-32-v2.png', 'icons/apple-touch-icon-v3.png'],
       manifest: {
         name: 'Accordeur — Guitare & Ukulélé',
         short_name: 'Accordeur',

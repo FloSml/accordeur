@@ -136,7 +136,10 @@ const targets = [
   { name: 'icon-512-v2.png', size: 512, opts: { padding: 0.16 } },
   { name: 'maskable-192-v2.png', size: 192, opts: { padding: 0.24, maskableBg: true } },
   { name: 'maskable-512-v2.png', size: 512, opts: { padding: 0.24, maskableBg: true } },
-  { name: 'apple-touch-icon-v2.png', size: 180, opts: { padding: 0.14 } },
+  // iOS renders transparent PNG areas as black on the home screen icon and
+  // applies its own corner rounding, so this one must be fully opaque and
+  // edge-to-edge like the maskable icons, not a rounded shape with alpha.
+  { name: 'apple-touch-icon-v3.png', size: 180, opts: { padding: 0.16, maskableBg: true } },
   { name: 'favicon-32-v2.png', size: 32, opts: { padding: 0.1 } },
   { name: 'favicon-16-v2.png', size: 16, opts: { padding: 0.05 } },
 ];
