@@ -9,10 +9,47 @@ const els = {
   cents: document.getElementById('cents'),
   frequency: document.getElementById('frequency'),
   needle: document.getElementById('needle'),
+  targetZone: document.getElementById('target-zone'),
+  tickLow: document.getElementById('tick-low'),
+  tickHigh: document.getElementById('tick-high'),
   micToggle: document.getElementById('mic-toggle'),
   micLabel: document.getElementById('mic-label'),
   status: document.getElementById('status'),
 };
+
+// Gauge geometry: pivot at (110, 115), radius 95, matching the arc drawn in
+// index.html — cents -50..+50 map to -90..+90 degrees from vertical.
+const GAUGE_CENTER = { x: 110, y: 115 };
+const GAUGE_RADIUS = 95;
+const IN_TUNE_CENTS = 5;
+
+function gaugePoint(cents, radius = GAUGE_RADIUS) {
+  const angleRad = ((cents / 50) * 90 * Math.PI) / 180;
+  return {
+    x: GAUGE_CENTER.x + radius * Math.sin(angleRad),
+    y: GAUGE_CENTER.y - radius * Math.cos(angleRad),
+  };
+}
+
+function renderTargetZone() {
+  const p1 = gaugePoint(-IN_TUNE_CENTS);
+  const p2 = gaugePoint(IN_TUNE_CENTS);
+  els.targetZone.setAttribute(
+    'd',
+    `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${GAUGE_RADIUS} ${GAUGE_RADIUS} 0 0 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`
+  );
+
+  const setTick = (line, cents) => {
+    const inner = gaugePoint(cents, GAUGE_RADIUS - 9);
+    const outer = gaugePoint(cents, GAUGE_RADIUS + 9);
+    line.setAttribute('x1', inner.x.toFixed(2));
+    line.setAttribute('y1', inner.y.toFixed(2));
+    line.setAttribute('x2', outer.x.toFixed(2));
+    line.setAttribute('y2', outer.y.toFixed(2));
+  };
+  setTick(els.tickLow, -IN_TUNE_CENTS);
+  setTick(els.tickHigh, IN_TUNE_CENTS);
+}
 
 const NOISE_FLOOR = 0.001;
 const LISTENING_STATUS = 'Écoute en cours… jouez une corde.';
@@ -138,7 +175,7 @@ function handlePitch(result) {
   els.frequency.textContent = `${frequency.toFixed(1)} Hz`;
   updateNeedle(cents);
 
-  const inTune = Math.abs(cents) <= 5;
+  const inTune = Math.abs(cents) <= IN_TUNE_CENTS;
   const close = Math.abs(cents) <= 15;
   setTuningState(inTune ? 'is-in-tune' : cents < 0 ? 'is-flat' : 'is-sharp');
   els.needle.classList.toggle('needle-in-tune', inTune);
@@ -183,5 +220,6 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && micActive) toggleMic();
 });
 
+renderTargetZone();
 setActiveInstrument('guitar');
 clearReading();

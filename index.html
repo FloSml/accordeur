@@ -24,9 +24,10 @@
         <section class="gauge-section" aria-live="polite">
           <div class="gauge">
             <svg viewBox="0 0 220 130" class="gauge-svg" aria-hidden="true">
-              <path d="M 15 115 A 95 95 0 0 1 205 115" class="gauge-track gauge-zone-out" />
-              <path d="M 41 115 A 95 95 0 0 1 179 115" class="gauge-track gauge-zone-mid" />
-              <path d="M 58 115 A 95 95 0 0 1 162 115" class="gauge-track gauge-zone-in" />
+              <path d="M 15 115 A 95 95 0 0 1 205 115" class="gauge-track" />
+              <path id="target-zone" class="gauge-target-zone" />
+              <line id="tick-low" class="gauge-tick" />
+              <line id="tick-high" class="gauge-tick" />
               <line id="needle" x1="110" y1="115" x2="110" y2="30" class="gauge-needle" />
               <circle cx="110" cy="115" r="6" class="gauge-pivot" />
             </svg>

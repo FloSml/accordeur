@@ -115,21 +115,21 @@ main {
 .gauge-track {
   fill: none;
   stroke-linecap: round;
-}
-
-.gauge-zone-out {
   stroke: var(--surface-2);
   stroke-width: 12;
 }
 
-.gauge-zone-mid {
-  stroke: #4a4020;
+.gauge-target-zone {
+  fill: none;
+  stroke: var(--in-tune);
   stroke-width: 12;
+  stroke-linecap: round;
 }
 
-.gauge-zone-in {
-  stroke: #164a2e;
-  stroke-width: 12;
+.gauge-tick {
+  stroke: var(--in-tune);
+  stroke-width: 2.5;
+  stroke-linecap: round;
 }
 
 .gauge-needle {
